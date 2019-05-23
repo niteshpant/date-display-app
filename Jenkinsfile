@@ -3,7 +3,7 @@ def label = "worker-${UUID.randomUUID().toString()}"
 podTemplate(label: label, containers: [
   containerTemplate(name: 'npm', image: 'node:carbon-jessie', command: 'cat', ttyEnabled: true),
   containerTemplate(name: 'docker', image: 'docker', command: 'cat', ttyEnabled: true),
-  // containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl:v1.8.8', command: 'cat', ttyEnabled: true),
+  containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl:v1.8.8', command: 'cat', ttyEnabled: true),
   // containerTemplate(name: 'helm', image: 'lachlanevenson/k8s-helm:latest', command: 'cat', ttyEnabled: true)
 ],
 volumes: [
@@ -32,23 +32,27 @@ volumes: [
       }
     }
     stage('Docker push'){
-      withCredentials([usernamePassword(credentialsId: 'dockerlogin', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]) {
-        sh """
-          docker login -u ${dockerusername} -p ${dockerpassword}
-          docker build -t ${dockerusername}/data-date-display:1.1 .
-          docker push ${dockerusername}/data-date-display:1.1
-        """
+      container('docker'){
+        withCredentials([usernamePassword(credentialsId: 'dockerlogin', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]) {
+          sh """
+            docker login -u ${dockerusername} -p ${dockerpassword}
+            docker build -t ${dockerusername}/data-date-display:1.1 .
+            docker push ${dockerusername}/data-date-display:1.1
+          """
+        }
       }
     }
     stage('kub push'){
-      withCredentials([usernamePassword(credentialsId: 'dockerlogin', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]) {
-        sh """
-          docker login -u ${dockerusername} -p ${dockerpassword}
-          docker build -t ${dockerusername}/data-date-display:1.1 .
-          kubectl run --image=${dockerusername}/data-date-display:1.1 date-app --port=8081
-        """
-      } 
+      container('kubectl'){
+        withCredentials([usernamePassword(credentialsId: 'dockerlogin', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]) {
+          sh """
+            docker login -u ${dockerusername} -p ${dockerpassword}
+            docker build -t ${dockerusername}/data-date-display:1.1 .
+            kubectl run --image=${dockerusername}/data-date-display:1.1 date-app --port=8081
+          """
+        } 
 
+      }
     }
     // stage('Run helm') {
     //   container('helm') {
