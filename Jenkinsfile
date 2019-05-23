@@ -17,7 +17,7 @@ volumes: [
     def shortGitCommit = "${gitCommit[0..10]}"
     def previousGitCommit = sh(script: "git rev-parse ${gitCommit}~", returnStdout: true)
  
-    stage('Test') {
+    stage('Build & Test') {
       try {
         container('npm') {
           sh """
@@ -29,11 +29,6 @@ volumes: [
       catch (exc) {
         println "Failed to test - ${currentBuild.fullDisplayName}"
         throw(exc)
-      }
-    }
-    stage('Build') {
-      container('gradle') {
-        sh "gradle build"
       }
     }
     stage('Docker push'){
