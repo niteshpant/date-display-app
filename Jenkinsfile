@@ -19,7 +19,7 @@ volumes: [
  
     stage('Test') {
       try {
-        container('gradle') {
+        container('npm') {
           sh """
             npm install
             npm test
