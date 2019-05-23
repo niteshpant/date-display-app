@@ -31,30 +31,30 @@ volumes: [
         throw(exc)
       }
     }
-    // stage('Build') {
-    //   container('gradle') {
-    //     sh "gradle build"
-    //   }
-    // }
-    // stage('Create Docker images') {
-    //   container('docker') {
-    //     withCredentials([[$class: 'UsernamePasswordMultiBinding',
-    //       credentialsId: 'dockerhub',
-    //       usernameVariable: 'DOCKER_HUB_USER',
-    //       passwordVariable: 'DOCKER_HUB_PASSWORD']]) {
-    //       sh """
-    //         docker login -u ${DOCKER_HUB_USER} -p ${DOCKER_HUB_PASSWORD}
-    //         docker build -t namespace/my-image:${gitCommit} .
-    //         docker push namespace/my-image:${gitCommit}
-    //         """
-    //     }
-    //   }
-    // }
-    // stage('Run kubectl') {
-    //   container('kubectl') {
-    //     sh "kubectl get pods"
-    //   }
-    // }
+    stage('Build') {
+      container('gradle') {
+        sh "gradle build"
+      }
+    }
+    stage('Docker push'){
+      withCredentials([usernamePassword(credentialsId: 'dockerlogin', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]) {
+        sh """
+          docker login -u ${dockerusername} -p ${dockerpassword}
+          docker build -t ${dockerusername}/data-date-display:1.1 .
+          docker push ${dockerusername}/data-date-display:1.1
+        """
+      }
+    }
+    stage('kub push'){
+      withCredentials([usernamePassword(credentialsId: 'dockerlogin', passwordVariable: 'dockerpassword', usernameVariable: 'dockerusername')]) {
+        sh """
+          docker login -u ${dockerusername} -p ${dockerpassword}
+          docker build -t ${dockerusername}/data-date-display:1.1 .
+          kubectl run --image=${dockerusername}/data-date-display:1.1 date-app --port=8081
+        """
+      } 
+
+    }
     // stage('Run helm') {
     //   container('helm') {
     //     sh "helm list"
